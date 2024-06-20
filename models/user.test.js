@@ -13,6 +13,7 @@ const {
   commonAfterEach,
   commonAfterAll,
 } = require("./_testCommon");
+const app = require("../app.js");
 
 beforeAll(commonBeforeAll);
 beforeEach(commonBeforeEach);
@@ -133,13 +134,16 @@ describe("findAll", function () {
 
 describe("get", function () {
   test("works", async function () {
-    let user = await User.get("u1");
+    const apps = await db.query(`SELECT * FROM applications WHERE username = $1`,["u1"]);
+
+    const user = await User.get("u1");
     expect(user).toEqual({
       username: "u1",
       firstName: "U1F",
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      jobs : apps.rows.map(a => a.job_id)
     });
   });
 
@@ -215,7 +219,7 @@ describe("remove", function () {
   test("works", async function () {
     await User.remove("u1");
     const res = await db.query(
-        "SELECT * FROM users WHERE username='u1'");
+      "SELECT * FROM users WHERE username='u1'");
     expect(res.rows.length).toEqual(0);
   });
 
@@ -228,3 +232,22 @@ describe("remove", function () {
     }
   });
 });
+
+
+/************************************ apply */
+
+describe("apply", function () {
+  test("works", async function () {
+
+    const job = await db.query(`SELECT id FROM jobs WHERE title='j1'`);
+    
+    const jobId = job.rows[0].id
+
+    const app = await User.apply(jobId, 'u1');
+
+    const allApps = await db.query(`SELECT * FROM applications`)
+
+    expect(app).toEqual({ jobId });
+    expect(allApps.rows.length).toEqual(1)
+  })
+})

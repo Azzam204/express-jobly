@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 const db = require("../db.js");
 const { BadRequestError, NotFoundError } = require("../expressError");
 const Company = require("./company.js");
@@ -85,6 +87,54 @@ describe("findAll", function () {
       },
     ]);
   });
+
+  test("works : name filter ", async function() {
+    let companies = await Company.findAll({name:'C1'});
+    expect(companies).toEqual([
+      {
+        handle: "c1",
+        name: "C1",
+        description: "Desc1",
+        numEmployees: 1,
+        logoUrl: "http://c1.img"
+      }
+    ]);
+  });
+
+  test("works : min employee filter ", async function() {
+    let companies = await Company.findAll({minEmployees: 3 });
+    expect(companies).toEqual([
+      {
+        handle: "c3",
+        name: "C3",
+        description: "Desc3",
+        numEmployees: 3,
+        logoUrl: "http://c3.img"
+      }
+    ]);
+  });
+
+  test("works : max employee filter ", async function() {
+    let companies = await Company.findAll({maxEmployees: 1 });
+    expect(companies).toEqual([
+      {
+        handle: "c1",
+        name: "C1",
+        description: "Desc1",
+        numEmployees: 1,
+        logoUrl: "http://c1.img"
+      }
+    ]);
+  });  
+
+  test("returns BadRequestError if minEmployees exceeds maxEmployees", async function() {
+    try {
+      await Company.findAll({maxEmployees : 1, minEmployees : 2});
+      fail()
+    } catch (error) {
+      expect(error instanceof BadRequestError).toBeTruthy();
+    }
+  })
 });
 
 /************************************** get */
@@ -96,6 +146,7 @@ describe("get", function () {
       handle: "c1",
       name: "C1",
       description: "Desc1",
+      jobs : company.jobs,
       numEmployees: 1,
       logoUrl: "http://c1.img",
     });

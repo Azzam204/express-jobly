@@ -1,10 +1,14 @@
 "use strict";
 
+
+
 const jwt = require("jsonwebtoken");
 const { UnauthorizedError } = require("../expressError");
 const {
   authenticateJWT,
   ensureLoggedIn,
+  ensureAdmin,
+  ensureAuthUser
 } = require("./auth");
 
 
@@ -77,4 +81,77 @@ describe("ensureLoggedIn", function () {
     };
     ensureLoggedIn(req, res, next);
   });
+});
+
+
+describe("ensureAdmin", function () {
+  test('works', function () {
+    const req = {};
+    const res = {
+      locals: {
+        user : { username :"test", isAdmin: true}
+      }
+    };
+    const next = function (err) {
+      expect(err).toBeFalsy();
+    };
+    ensureAdmin(req,res,next)
+  });
+
+  test('unauth if not admin', function () {
+    const req = {};
+    const res = { locals: {} };
+    const next = function (err) {
+      expect(err instanceof UnauthorizedError).toBeTruthy();
+    };
+    ensureAdmin(req,res,next);
+  })
+});
+
+describe("ensureAuthUser", function () {
+  test('works for authorized user that is not admin', function () {
+    const req = {
+      params : {username : 'test'}
+    };
+    const res = {
+      locals : {
+        user : {username : 'test', isAdmin: false}
+      }
+    };
+    const next = function (err) {
+      expect(err).toBeFalsy();
+    };
+    ensureAuthUser(req,res,next);
+  });
+
+  test('works for admin who is different user', function () {
+    const req = {
+      params : {username : "testuser204"}
+    };
+    const res = {
+      locals : {
+        user : {username : 'testadmin', isAdmin : true}
+      }
+    };
+    const next = function (err) {
+      expect(err).toBeFalsy();
+    };
+    ensureAuthUser(req,res,next);
+  });
+
+  test('unauth if not admin and not user', function () {
+    const req = {
+      params : {username : "testuser204"}
+    };
+    const res = {
+      locals : {
+        user : {username : 'testnotadmin', isAdmin : false}
+      }
+    };
+    const next = function (err) {
+      expect(err instanceof UnauthorizedError).toBeTruthy();
+    };
+    ensureAuthUser(req,res,next); 
+  });
+
 });
